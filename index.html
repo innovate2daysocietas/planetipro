@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PLANETI: restoring Uganda’s land and water with NASA data</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&display=swap">
+<style>
+:root{--bg:#f4f6f0;--ink:#14241c;--mute:#4d6156;--line:#cdd8cd;--card:#fff;--acc:#1b7444;--warn:#c0392b;--sun:#e0a800;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1a14;--ink:#e6efe8;--mute:#9db1a4;--line:#27392f;--card:#15261d;--acc:#4cc27f;--warn:#ff7a6b;--sun:#f2c230;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0e1a14;--ink:#e6efe8;--mute:#9db1a4;--line:#27392f;--card:#15261d;--acc:#4cc27f;--warn:#ff7a6b;--sun:#f2c230;color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+h1,h2,h3{font-family:"Bricolage Grotesque",system-ui,sans-serif;line-height:1.1;margin:0}
+.wrap{max-width:1120px;margin:0 auto;padding:0 18px}
+header{padding:44px 0 22px}
+h1{font-size:clamp(3rem,10vw,6.4rem);font-weight:800;letter-spacing:-.03em}
+.lead{max-width:62ch;font-size:1.15rem;color:var(--mute);margin:14px 0 10px}
+.badge{display:inline-block;border:1px solid var(--sun);color:var(--ink);padding:3px 10px;border-radius:99px;font-size:.85rem}
+.app{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:18px;margin:14px 0 8px}
+@media(max-width:860px){.app{grid-template-columns:1fr}}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px}
+.panel h3{font-size:1.05rem;margin-bottom:8px}
+.ctl{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px}
+label{font-size:.88rem;color:var(--mute);display:block}
+select,input[type=range],textarea,button{width:100%;font:inherit;color:var(--ink)}
+select,textarea{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px}
+button{background:var(--acc);color:#fff;border:0;border-radius:6px;padding:9px 14px;cursor:pointer;width:auto}
+button.alt{background:transparent;color:var(--ink);border:1px solid var(--line)}
+:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+canvas{width:100%;height:auto;display:block;border-radius:6px;cursor:crosshair;background:#222}
+.legend{display:flex;gap:10px;align-items:center;font-size:.82rem;color:var(--mute);margin-top:6px;flex-wrap:wrap}
+.bar{height:10px;width:140px;border-radius:5px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.stat{border:1px solid var(--line);border-radius:8px;padding:8px}
+.stat b{display:block;font-size:1.4rem;font-family:"Bricolage Grotesque",system-ui,sans-serif}
+.stat span{font-size:.8rem;color:var(--mute)}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+th,td{text-align:left;padding:5px 6px;border-bottom:1px solid var(--line)}
+tr.row{cursor:pointer}tr.row:hover{background:var(--bg)}
+.scroll{overflow-x:auto}
+.detail{font-size:.92rem;min-height:5.2em}
+.note{font-size:.85rem;color:var(--mute)}
+section.doc{margin:46px 0}
+section.doc h2{font-size:clamp(1.6rem,4vw,2.3rem);margin-bottom:12px}
+section.doc p,section.doc li{max-width:72ch}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+code{background:var(--card);border:1px solid var(--line);padding:1px 5px;border-radius:4px;font-size:.9em}
+footer{border-top:1px solid var(--line);padding:22px 0 40px;color:var(--mute);font-size:.9rem}
+@media(prefers-reduced-motion:no-preference){.pulse{animation:p 1.6s ease-out 1}@keyframes p{from{opacity:.2}to{opacity:1}}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<h1>PLANETI</h1>
+<p class="lead">PLANETI uses NASA satellite data to show where Uganda’s forests, wetlands and hillsides have been lost, where restoring them will work best, and whether recovery is happening.</p>
+<span class="badge">Working prototype. The map below runs on sample data; paste real satellite exports into it further down.</span>
+</header>
+
+<div class="app">
+<div class="panel">
+<div class="ctl">
+<div><label for="site">Site</label><select id="site"></select></div>
+<div><label for="layer">Map layer</label><select id="layer"><option value="prio">Restoration priority</option><option value="ndvi">Vegetation (NDVI)</option><option value="loss">Vegetation lost since 2005</option></select></div>
+<div><label for="year">Year: <b id="yv">2025</b></label><input type="range" id="year" min="2005" max="2025" value="2025"></div>
+</div>
+<canvas id="map" width="700" height="450" aria-label="Map of the selected site. Click a square for details."></canvas>
+<div class="legend" id="legend"></div>
+<p class="note" id="sitenote"></p>
+</div>
+
+<div class="panel">
+<div class="stats">
+<div class="stat"><b id="s1">–</b><span>average vegetation index</span></div>
+<div class="stat"><b id="s2">–</b><span>of area with vegetation loss</span></div>
+<div class="stat"><b id="s3">–</b><span>new clearing alerts this year</span></div>
+<div class="stat"><b id="s4">–</b><span>average score of top 10 sites</span></div>
+</div>
+<h3>Vegetation trend</h3>
+<canvas id="trend" width="400" height="130" style="cursor:default;background:var(--bg)" aria-label="Line chart of average vegetation index by year"></canvas>
+<h3 style="margin-top:12px">Selected square</h3>
+<div class="detail" id="detail">Click a square on the map.</div>
+<h3>What matters most</h3>
+<div class="ctl" style="grid-template-columns:1fr 1fr">
+<div><label>Vegetation lost <b id="wv0"></b></label><input type="range" id="w0" min="0" max="100" value="40"></div>
+<div><label>Rainfall <b id="wv1"></b></label><input type="range" id="w1" min="0" max="100" value="20"></div>
+<div><label>Soil moisture <b id="wv2"></b></label><input type="range" id="w2" min="0" max="100" value="20"></div>
+<div><label>Slope (erosion) <b id="wv3"></b></label><input type="range" id="w3" min="0" max="100" value="20"></div>
+</div>
+</div>
+</div>
+
+<div class="panel">
+<h3>Top 10 places to restore</h3>
+<div class="scroll"><table><thead><tr><th>Rank</th><th>Latitude</th><th>Longitude</th><th>Score</th><th>Vegetation lost</th><th>Advice</th></tr></thead><tbody id="top"></tbody></table></div>
+</div>
+
+<section class="doc">
+<h2>Use your own satellite data</h2>
+<p>Export one row per grid point from Google Earth Engine or NASA AppEEARS, paste it here, and PLANETI ranks the places to restore. Columns: <code>lat,lon,slope,rain,soil,ndvi_start,ndvi_end</code>. Values are scaled automatically, so units don’t matter. The weights above apply.</p>
+<textarea id="csv" rows="7" aria-label="Paste CSV data here"></textarea>
+<p style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px"><button id="run">Rank my data</button><button id="ex" class="alt">Load an example</button></p>
+<p class="note" id="csvmsg"></p>
+<div class="scroll"><table id="ctab" hidden><thead><tr><th>Rank</th><th>Latitude</th><th>Longitude</th><th>Score</th><th>Vegetation lost</th></tr></thead><tbody></tbody></table></div>
+</section>
+
+<section class="doc">
+<h2>Get real NASA data for your site</h2>
+<p>This generator writes a ready-to-run Google Earth Engine script for any place. It samples NASA vegetation (MODIS), rainfall (GPM IMERG), soil moisture (SMAP) and slope (SRTM) and exports the exact CSV PLANETI needs. Earth Engine is free for research and nonprofit use.</p>
+<ol><li>Enter your site’s centre and its half-width, or use the selected site above.</li><li>Copy the script into <b>code.earthengine.google.com</b> and click Run.</li><li>Open the Tasks tab, click Run on <code>planeti_data</code>, and wait for the CSV in Google Drive.</li><li>Open the CSV, copy its contents, and paste them into the box above.</li></ol>
+<div class="ctl"><div><label for="glat">Latitude</label><input id="glat" type="number" step="0.001" value="2.4" style="width:100%;padding:7px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)"></div><div><label for="glon">Longitude</label><input id="glon" type="number" step="0.001" value="32.75" style="width:100%;padding:7px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)"></div><div><label for="gkm">Half-width (km)</label><input id="gkm" type="number" min="1" max="40" value="10" style="width:100%;padding:7px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)"></div></div>
+<p style="display:flex;gap:10px;flex-wrap:wrap"><button id="gsel" class="alt">Use the selected site</button><button id="gcopy">Copy script</button></p>
+<textarea id="gscript" rows="16" readonly aria-label="Google Earth Engine script" style="font:13px/1.4 ui-monospace,Menlo,Consolas,monospace"></textarea>
+<p class="note" id="gmsg">The script uses MODIS NDVI for 2005 and 2024 (the last full year), IMERG monthly rainfall for 2020–2024, SMAP surface soil moisture for 2024, and SRTM slope. Dataset names change over time, so if Earth Engine reports a missing dataset, search its catalog for the new version.</p>
+</section>
+
+<section class="doc">
+<h2>What PLANETI is</h2>
+<p>PLANETI is a restoration planning tool for communities, district officers and NGOs. It answers three questions with NASA open data: what did we lose, where should we act first, and is it working? The name comes from the Luganda word for planet, <em>Planeti</em>, and it is built for the NASA Space Apps 2026 theme, The Next Frontier, which includes problems in our own backyard.</p>
+<h2 style="margin-top:34px">The problem</h2>
+<p>Uganda’s wetlands, forests and hillsides hold water, protect soil and support farming. Clearing and drainage cause floods, silted rivers, water shortages and failed harvests. Planting trees alone is not enough: planting in the wrong place wastes seedlings, and nobody sees the loss until it is too late. PLANETI is inspired by QUEÑARIS, the Peruvian team that won the 2025 Local Impact Award for protecting queñua forests that feed Arequipa’s water.</p>
+</section>
+
+<section class="doc">
+<h2>How it works</h2>
+<div class="grid3">
+<div class="panel"><h3>1. See the past</h3><p>Yearly vegetation index (NDVI) from Landsat or MODIS, 2005 to today, shows where cover has gone and when.</p></div>
+<div class="panel"><h3>2. Rank the places</h3><p>Each grid square gets a score from vegetation lost, rainfall, soil moisture and slope. You set the weights to match your goal.</p></div>
+<div class="panel"><h3>3. Track recovery</h3><p>New satellite passes update the trend. A sudden NDVI drop in one year raises a new clearing alert.</p></div>
+</div>
+<p style="margin-top:14px"><b>Score formula.</b> For each square, <code>score = (wL·loss + wR·rain + wS·soil + wP·slope) ÷ (wL + wR + wS + wP)</code>, where every input is scaled 0 to 1 and the w values are the sliders. Squares with under 10% vegetation loss score zero, since there is nothing to restore. Higher means plant sooner. Steep squares with high loss also get advice on erosion control.</p>
+<p><b>Alert rule.</b> A square raises an alert when its NDVI falls by more than 0.10 compared with the previous year.</p>
+</section>
+
+<section class="doc">
+<h2>Data PLANETI is designed around</h2>
+<div class="scroll"><table>
+<thead><tr><th>Input</th><th>NASA source</th><th>Used for</th></tr></thead>
+<tbody>
+<tr><td>Vegetation index (NDVI)</td><td>Landsat or MODIS</td><td>Cover change over 20 years, recovery tracking</td></tr>
+<tr><td>Rainfall</td><td>GPM IMERG</td><td>Where planting is most likely to survive</td></tr>
+<tr><td>Soil moisture</td><td>SMAP</td><td>Wetland condition and drought stress</td></tr>
+<tr><td>Elevation and slope</td><td>SRTM</td><td>Erosion and landslide risk</td></tr>
+<tr><td>Fire detections</td><td>FIRMS</td><td>Early warning for burning</td></tr>
+</tbody></table></div>
+<p class="note">Check each source’s availability on the Space Apps challenge page and cite them in your project.</p>
+</section>
+
+<section class="doc">
+<h2>Going from prototype to real data</h2>
+<ol>
+<li>Draw the boundary of your site in Google Earth Engine (free for research and nonprofit use) or NASA Earthdata AppEEARS.</li>
+<li>Create yearly NDVI composites for 2005 and the latest year, plus annual rainfall, mean soil moisture and slope.</li>
+<li>Sample them on a regular grid, around 100 m to 1 km apart, and export as CSV with the columns above.</li>
+<li>Paste the CSV into the tool above. Share the ranked list with the district or community group.</li>
+</ol>
+<h2 style="margin-top:34px">Who benefits</h2>
+<p>Farmers and households who depend on stable water, district environment officers who choose planting sites, youth groups and schools running nurseries, and NGOs who need evidence for funding. Every ranked site comes with a plain-language reason, so non-specialists can act on it.</p>
+<h2 style="margin-top:34px">Honest limits</h2>
+<p>The map above uses simulated data to demonstrate the workflow, not real measurements for these places. It cannot yet pull live NASA data by itself, because browsers block that from a static page. NDVI shows greenness, not tree species, so teams should confirm sites on the ground. Rankings are decision support, not a substitute for local knowledge.</p>
+<h2 style="margin-top:34px">Three-minute pitch</h2>
+<p><b>Problem (30 s):</b> name the site and show a before and after. <b>Data (45 s):</b> show the 20-year trend and the NASA datasets. <b>Demo (60 s):</b> move the year slider, change the weights, click the top site. <b>Impact (30 s):</b> say who acts on it. <b>Next steps (15 s):</b> name your partners.</p>
+</section>
+</div>
+<footer><div class="wrap">PLANETI · built for the NASA Space Apps Challenge 2026 · sample data only, replace with your own exports</div></footer>
+
+<script>
+(function(){
+var $=function(s){return document.querySelector(s)};
+var W=28,H=18,Y0=2005,Y1=2025;
+var SITES={
+ elgon:{n:"Mount Elgon slopes, Mbale",x:34.35,y:1.15,amp:1,wet:.3,clr:.5,s:11,note:"Steep slopes: clearing here raises erosion and landslide risk."},
+ kole:{n:"Wetlands, Kole District",x:32.75,y:2.4,amp:.12,wet:.9,clr:.42,s:23,note:"Flat wetlands: drainage and farming expansion threaten water storage."},
+ kampala:{n:"Lubigi and Nakivubo wetlands, Kampala",x:32.55,y:.33,amp:.25,wet:.8,clr:.6,s:37,note:"Urban wetlands: construction and infilling reduce flood protection."}
+};
+function rng(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function field(r){var p=[],k=[];for(var i=0;i<4;i++){p.push([r()*6.3,r()*6.3]);k.push([.15+r()*.35,.15+r()*.35])}
+ return function(x,y){var v=0;for(var i=0;i<4;i++)v+=Math.sin(x*k[i][0]+p[i][0])*Math.cos(y*k[i][1]+p[i][1]);return(v/4+1)/2}}
+function mm(a){var lo=Math.min.apply(0,a),hi=Math.max.apply(0,a),d=hi-lo||1;return a.map(function(v){return(v-lo)/d})}
+var cells=[],site,sel=-1,top=[];
+function build(key){
+ site=SITES[key];var r=rng(site.s),fe=field(r),fr=field(r),fs=field(r),fc=field(r),fb=field(r);
+ var el=[],i,x,y;for(y=0;y<H;y++)for(x=0;x<W;x++)el.push(fe(x,y)*site.amp);
+ var sl=[];for(y=0;y<H;y++)for(x=0;x<W;x++){var e=el[y*W+x],ex=el[y*W+Math.min(x+1,W-1)],ey=el[Math.min(y+1,H-1)*W+x];sl.push(Math.abs(e-ex)+Math.abs(e-ey))}
+ sl=mm(sl);cells=[];
+ for(y=0;y<H;y++)for(x=0;x<W;x++){i=y*W+x;
+  var cl=fc(x,y)>1-site.clr*.8,c={x:x,y:y,slope:sl[i],rain:fr(x,y),soil:Math.min(1,Math.max(0,fs(x,y)*.5+site.wet*.5)),
+   b:.55+fb(x,y)*.3,d:cl?.2+r()*.45:0,st:Y0+Math.floor(r()*15),lat:site.y+(H/2-y)*.012,lon:site.x+(x-W/2)*.012};
+  cells.push(c)}
+}
+function ndvi(c,y){var t=Math.min(1,Math.max(0,(y-c.st)/6));return Math.max(.05,c.b-c.d*t*t*(3-2*t))}
+function weights(){var w=[0,1,2,3].map(function(i){return +$("#w"+i).value});w.forEach(function(v,i){$("#wv"+i).textContent=v});var s=w[0]+w[1]+w[2]+w[3]||1;return w.map(function(v){return v/s})}
+function loss(c,y){return Math.min(1,Math.max(0,(ndvi(c,Y0)-ndvi(c,y))/.6))}
+function score(c,y,w){var l=loss(c,y);return l<.1?0:w[0]*l+w[1]*c.rain+w[2]*c.soil+w[3]*c.slope}
+function lerp(a,b,t){return a.map(function(v,i){return Math.round(v+(b[i]-v)*t)})}
+function ramp(st,t){t=Math.min(.999,Math.max(0,t))*(st.length-1);var i=Math.floor(t);return lerp(st[i],st[i+1],t-i)}
+var NDV=[[138,90,43],[217,195,90],[47,158,87],[13,92,46]],PRI=[[226,239,243],[96,170,200],[28,96,160],[70,20,110]],LOS=[[238,238,226],[244,190,90],[200,70,40]];
+var css=function(c){return"rgb("+c.join(",")+")"};
+function render(){
+ var y=+$("#year").value,w=weights(),L=$("#layer").value,cv=$("#map"),g=cv.getContext("2d"),cs=cv.width/W;
+ $("#yv").textContent=y;
+ var sc=cells.map(function(c){return score(c,y,w)});
+ top=cells.map(function(c,i){return i}).filter(function(i){return sc[i]>0}).sort(function(a,b){return sc[b]-sc[a]}).slice(0,10);
+ var alerts=0;
+ cells.forEach(function(c,i){var col=L==="ndvi"?ramp(NDV,(ndvi(c,y)-.1)/.8):L==="loss"?ramp(LOS,loss(c,y)):sc[i]>0?ramp(PRI,sc[i]*1.1):[225,230,225];
+  g.fillStyle=css(col);g.fillRect(c.x*cs,c.y*cs,cs,cs);
+  if(y>Y0&&ndvi(c,y-1)-ndvi(c,y)>.1){alerts++;g.fillStyle="#e23b2a";g.beginPath();g.arc(c.x*cs+cs/2,c.y*cs+cs/2,cs*.18,0,6.3);g.fill()}});
+ g.lineWidth=2;top.forEach(function(i,k){var c=cells[i];g.strokeStyle="#ffd21f";g.strokeRect(c.x*cs+1,c.y*cs+1,cs-2,cs-2);g.fillStyle="#000";g.font="bold 11px sans-serif";g.fillText(k+1,c.x*cs+5,c.y*cs+15)});
+ if(sel>=0){var s=cells[sel];g.strokeStyle="#fff";g.lineWidth=3;g.strokeRect(s.x*cs+1,s.y*cs+1,cs-2,cs-2)}
+ var m=cells.reduce(function(a,c){return a+ndvi(c,y)},0)/cells.length;
+ $("#s1").textContent=m.toFixed(2);
+ $("#s2").textContent=Math.round(100*cells.filter(function(c){return loss(c,y)>.2}).length/cells.length)+"%";
+ $("#s3").textContent=alerts;
+ $("#s4").textContent=top.length?(top.reduce(function(a,i){return a+sc[i]},0)/top.length).toFixed(2):"–";
+ $("#top").innerHTML=top.map(function(i,k){var c=cells[i];return'<tr class="row" tabindex="0" data-i="'+i+'"><td>'+(k+1)+"</td><td>"+c.lat.toFixed(3)+"</td><td>"+c.lon.toFixed(3)+"</td><td>"+sc[i].toFixed(2)+"</td><td>"+Math.round(loss(c,y)*100)+"%</td><td>"+advice(c,y)+"</td></tr>"}).join("")||'<tr><td colspan="6">No squares need restoring in this year.</td></tr>';
+ var leg={prio:["Low priority",PRI,"High priority"],ndvi:["Bare",NDV,"Dense vegetation"],loss:["No loss",LOS,"Heavy loss"]}[L];
+ $("#legend").innerHTML=leg[0]+' <span class="bar" style="background:linear-gradient(90deg,'+leg[1].map(css).join(",")+')"></span> '+leg[2]+' · <span style="color:var(--warn)">red dot = new clearing</span> · yellow box = top 10';
+ trend(y);detail(y,sc);
+}
+function advice(c,y){return c.slope>.6?"Plant native trees and add erosion control":c.soil>.65?"Restore wetland vegetation and stop drainage":"Plant native trees; protect from fire"}
+function trend(y){var cv=$("#trend"),g=cv.getContext("2d"),w=cv.width,h=cv.height,pts=[],yr;g.clearRect(0,0,w,h);
+ for(yr=Y0;yr<=Y1;yr++)pts.push(cells.reduce(function(a,c){return a+ndvi(c,yr)},0)/cells.length);
+ var lo=Math.min.apply(0,pts)-.02,hi=Math.max.apply(0,pts)+.02,st=getComputedStyle(document.body);
+ g.strokeStyle=st.getPropertyValue("--acc");g.lineWidth=2.5;g.beginPath();
+ pts.forEach(function(v,i){var px=10+i*(w-20)/(pts.length-1),py=h-14-(v-lo)/(hi-lo)*(h-28);i?g.lineTo(px,py):g.moveTo(px,py)});g.stroke();
+ var cx=10+(y-Y0)*(w-20)/(Y1-Y0);g.strokeStyle=st.color;g.lineWidth=1;g.setLineDash([4,3]);g.beginPath();g.moveTo(cx,4);g.lineTo(cx,h-14);g.stroke();g.setLineDash([]);
+ g.fillStyle=st.color;g.font="11px sans-serif";g.fillText(Y0,4,h-2);g.fillText(Y1,w-30,h-2)}
+function detail(y,sc){if(sel<0)return;var c=cells[sel];$("#detail").innerHTML="<b>"+c.lat.toFixed(3)+"°, "+c.lon.toFixed(3)+"°</b><br>Vegetation index "+ndvi(c,Y0).toFixed(2)+" in "+Y0+" → "+ndvi(c,y).toFixed(2)+" in "+y+"<br>Slope "+Math.round(c.slope*100)+"%, rain "+Math.round(c.rain*100)+"%, soil moisture "+Math.round(c.soil*100)+"% (relative)<br>Score <b>"+sc[sel].toFixed(2)+"</b>. "+(sc[sel]>0?advice(c,y):"No significant loss here; protect it.")}
+$("#map").addEventListener("click",function(e){var r=this.getBoundingClientRect(),x=Math.floor((e.clientX-r.left)/r.width*W),y=Math.floor((e.clientY-r.top)/r.height*H);sel=y*W+x;render()});
+$("#top").addEventListener("click",function(e){var t=e.target.closest("tr");if(t){sel=+t.dataset.i;render()}});
+$("#top").addEventListener("keydown",function(e){if(e.key==="Enter"){var t=e.target.closest("tr");if(t){sel=+t.dataset.i;render()}}});
+Object.keys(SITES).forEach(function(k){$("#site").insertAdjacentHTML("beforeend",'<option value="'+k+'">'+SITES[k].n+"</option>")});
+$("#site").addEventListener("change",function(){build(this.value);sel=-1;$("#detail").textContent="Click a square on the map.";$("#sitenote").textContent=site.note+" Sample data.";render()});
+["#layer","#year","#w0","#w1","#w2","#w3"].forEach(function(s){$(s).addEventListener("input",render)});
+var EX="lat,lon,slope,rain,soil,ndvi_start,ndvi_end\n1.20,34.30,28,1450,.31,.82,.41\n1.18,34.33,35,1500,.28,.80,.36\n1.15,34.36,12,1380,.44,.74,.68\n1.12,34.40,22,1420,.35,.78,.52\n1.10,34.45,6,1300,.52,.70,.66\n1.22,34.28,31,1520,.30,.85,.33";
+$("#ex").addEventListener("click",function(){$("#csv").value=EX});
+$("#run").addEventListener("click",function(){
+ var rows=$("#csv").value.trim().split(/\r?\n/).map(function(l){return l.split(",").map(function(s){return s.trim()})}),msg=$("#csvmsg"),tb=$("#ctab");
+ if(rows.length<2){msg.textContent="Paste a header row and at least one data row.";tb.hidden=true;return}
+ var h=rows[0].map(function(s){return s.toLowerCase()}),need=["lat","lon","slope","rain","soil","ndvi_start","ndvi_end"],ix={},bad=[];
+ need.forEach(function(n){ix[n]=h.indexOf(n);if(ix[n]<0)bad.push(n)});
+ if(bad.length){msg.textContent="Missing column(s): "+bad.join(", ")+". Use exactly: "+need.join(",");tb.hidden=true;return}
+ var d=rows.slice(1).filter(function(r){return r.length>=h.length}),col=function(n){return d.map(function(r){return parseFloat(r[ix[n]])})};
+ var all=need.map(col);if(all.some(function(a){return a.some(isNaN)})){msg.textContent="Some values are not numbers. Check for blanks or text in the data rows.";tb.hidden=true;return}
+ var sl=mm(col("slope")),rn=mm(col("rain")),so=mm(col("soil")),ls=col("ndvi_start").map(function(v,i){return v-col("ndvi_end")[i]}),mx=Math.max.apply(0,ls)||1,w=weights();
+ var res=d.map(function(r,i){var l=Math.max(0,ls[i]/mx);return{lat:r[ix.lat],lon:r[ix.lon],l:l,s:l<.1?0:w[0]*l+w[1]*rn[i]+w[2]*so[i]+w[3]*sl[i]}}).sort(function(a,b){return b.s-a.s}).slice(0,15);
+ tb.querySelector("tbody").innerHTML=res.map(function(r,k){return"<tr><td>"+(k+1)+"</td><td>"+r.lat+"</td><td>"+r.lon+"</td><td>"+r.s.toFixed(2)+"</td><td>"+Math.round(r.l*100)+"%</td></tr>"}).join("");
+ tb.hidden=false;msg.textContent="Ranked "+d.length+" points using the current weights. Higher score means restore sooner."});
+function gee(){var la=parseFloat($("#glat").value),lo=parseFloat($("#glon").value),km=parseFloat($("#gkm").value),m=$("#gmsg");
+ if(!(la>=-90&&la<=90&&lo>=-180&&lo<=180&&km>=1&&km<=40)){$("#gscript").value="";m.textContent="Enter a latitude from -90 to 90, a longitude from -180 to 180, and a half-width from 1 to 40 km.";return}
+ $("#gscript").value=[
+"// PLANETI data export for Google Earth Engine (code.earthengine.google.com)",
+"var lat = "+la+", lon = "+lo+", halfWidthKm = "+km+";",
+"var startYear = 2005, endYear = 2024;",
+"var aoi = ee.Geometry.Point([lon, lat]).buffer(halfWidthKm * 1000).bounds();",
+"",
+"// Vegetation (NDVI) yearly median from MODIS",
+"function ndvi(y) {",
+"  return ee.ImageCollection('MODIS/061/MOD13A1')",
+"    .filterDate(y + '-01-01', (y + 1) + '-01-01')",
+"    .select('NDVI').median().multiply(0.0001);",
+"}",
+"// Rainfall: mean monthly rate (mm/hr), GPM IMERG",
+"var rain = ee.ImageCollection('NASA/GPM_L3/IMERG_MONTHLY_V07')",
+"  .filterDate('2020-01-01', '2025-01-01').select('precipitation').mean();",
+"// Soil moisture: SMAP L4 surface, mean for 2024",
+"var soil = ee.ImageCollection('NASA/SMAP/SPL4SMGP/008')",
+"  .filterDate('2024-01-01', '2025-01-01').select('sm_surface').mean();",
+"// Slope in degrees from SRTM",
+"var slope = ee.Terrain.slope(ee.Image('USGS/SRTMGL1_003'));",
+"",
+"var stack = ee.Image.cat([",
+"  slope.rename('slope'), rain.rename('rain'), soil.rename('soil'),",
+"  ndvi(startYear).rename('ndvi_start'), ndvi(endYear).rename('ndvi_end')",
+"]).clip(aoi);",
+"",
+"var samples = stack.sample({region: aoi, scale: 500, numPixels: 600, geometries: true, seed: 1});",
+"var rows = samples.map(function(f) {",
+"  var c = f.geometry().coordinates();",
+"  return f.set({lat: c.get(1), lon: c.get(0)});",
+"});",
+"print('Sample points', rows.size());",
+"Map.centerObject(aoi, 10);",
+"Map.addLayer(stack.select('ndvi_end'), {min: 0.1, max: 0.9, palette: ['8a5a2b','d9c35a','2f9e57','0d5c2e']}, 'NDVI ' + endYear);",
+"",
+"Export.table.toDrive({",
+"  collection: rows, description: 'planeti_data', fileFormat: 'CSV',",
+"  selectors: ['lat', 'lon', 'slope', 'rain', 'soil', 'ndvi_start', 'ndvi_end']",
+"});"].join("\n");
+ m.textContent="Script ready. Copy it into the Earth Engine Code Editor and click Run, then run the export task. Dataset names change over time, so if Earth Engine reports a missing dataset, search its catalog for the new version."}
+["#glat","#glon","#gkm"].forEach(function(s){$(s).addEventListener("input",gee)});
+$("#gsel").addEventListener("click",function(){$("#glat").value=site.y;$("#glon").value=site.x;gee()});
+$("#gcopy").addEventListener("click",function(){var t=$("#gscript");if(!t.value)return;t.select();var ok=false;try{ok=document.execCommand("copy")}catch(e){}$("#gmsg").textContent=ok?"Copied. Paste it into the Earth Engine Code Editor.":"Select the script text and copy it with Ctrl+C or the long-press menu."});
+build("elgon");$("#sitenote").textContent=site.note+" Sample data.";render();gee();
+})();
+</script>
+</body>
+</html>
